@@ -7,6 +7,23 @@ Full ideal-state articulation, decisions, and open questions: `ISA.md` (read
 this first — it has the real history, including two mid-build bugs caught
 and fixed via live browser verification).
 
+## Deployment
+
+Live at **https://workout-app-taboost.vercel.app** (Vercel project `taboost/workout-app`,
+publicly accessible — Deployment Protection is intentionally off). GitHub: `ceyre-boop/workout-app`.
+
+**Gotcha if it ever 404s site-wide again despite a clean `next build`:** check the
+Vercel project's Framework Preset — `vercel api "/v9/projects/<id>?teamId=<team>"`
+and look for `"framework"`. If it's `null`, Vercel builds the app as a generic
+static site (empty `functions/`, empty `routes` in `.vercel/output/config.json`)
+even though `next build` itself succeeds and looks fine in the logs. Fix:
+`vercel api "/v9/projects/<id>?teamId=<team>" -X PATCH -F framework=nextjs`.
+This project was also briefly on Next.js 16 (Vercel's builder there produced the
+same empty-manifest symptom even after the framework fix was ruled out as the
+sole cause on 16 — never fully root-caused since 15 fixed it outright); if
+upgrading past 15 again, verify with `vercel build` + inspect
+`.vercel/output/config.json` for real routes *before* trusting a deploy.
+
 ## Status at a glance
 
 - **Live/working:** design system + tokens (`app/globals.css`), all base
