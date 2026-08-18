@@ -1,0 +1,152 @@
+@import "tailwindcss";
+
+/*
+  Design tokens — transcribed exactly from the brief's §2 spec.
+  Every component reads these. No hardcoded hex anywhere in component code.
+*/
+:root {
+  --bg: #f7f6f2;
+  --surface: #ffffff;
+  --border: #d9d6d1;
+  --text-muted: #8e8b87;
+  --text: #1e1e1e;
+  --primary: #6b1f2b;
+  --primary-soft: #a77a83;
+
+  /* Not on the board — derived for states the boards don't show */
+  --danger: #b3261e;
+  --success: #2f6b3a;
+  --overlay-scrim: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(0, 0, 0, 0.35) 55%,
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+/* System preference, only when no manual override is stored */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1a1a;
+    --surface: #2d2d2d;
+    --border: #3a3a3a;
+    --text-muted: #8e8b87;
+    --text: #e6e6e6;
+    --primary: #6b1f2b;
+    --primary-soft: #a78a8f;
+  }
+}
+
+/* Manual override wins in both directions */
+[data-theme="dark"] {
+  --bg: #1a1a1a;
+  --surface: #2d2d2d;
+  --border: #3a3a3a; /* derived — board doesn't specify, kept quiet/low-contrast */
+  --text-muted: #8e8b87;
+  --text: #e6e6e6;
+  --primary: #6b1f2b;
+  --primary-soft: #a78a8f;
+}
+
+[data-theme="light"] {
+  --bg: #f7f6f2;
+  --surface: #ffffff;
+  --border: #d9d6d1;
+  --text-muted: #8e8b87;
+  --text: #1e1e1e;
+  --primary: #6b1f2b;
+  --primary-soft: #a77a83;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-primary: var(--primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+
+  --font-display: var(--font-barlow-condensed);
+  --font-body: var(--font-inter);
+  --font-script: var(--font-sacramento);
+
+  --radius-app: 4px; /* per brief — small radius, not a pill */
+
+  --animate-pulse-soft: pulse-soft 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  ::selection {
+    background: var(--primary);
+    color: white;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .scrim {
+    background: var(--overlay-scrim);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
