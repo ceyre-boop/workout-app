@@ -273,6 +273,12 @@ Ship a running Next.js PWA in `/Users/taboost/workout-app`, installable and navi
 - 2026-08-18T00:11:47Z: **Photography is AI-generated placeholder**, not real. Rationale: brief §10.2 flags real photography as an open licensing question the user can't answer mid-build; generated stand-ins let the "photo IS the card" motif demo correctly without blocking on a real shoot. Flagged to user as needing replacement before launch.
 - 2026-08-18T00:11:47Z: **Show-your-math on delegation floor:** Forge is scoped to the mock-data/content generation subtask only (isolated, well-specified, low-consistency-risk), not the shared design-system/component code, because two independent authors writing the same shadcn-restyle/token system would risk visual drift on the single highest-priority requirement in the brief (pixel-fidelity to the boards). Cato runs read-only at VERIFY per the E4 mandate. A third delegation (image generation) runs in parallel where it doesn't touch shared app code.
 
+## Learning
+
+- Offline-first "identity" needs two layers (a stable pointer to the active session + a stable id per written row), not one — worth remembering for any future build with this shape.
+- Cato failed twice with truncated non-outputs in this session/environment — a real infra gap worth investigating outside this task, not something to silently paper over or keep retrying against.
+- A `fork` agent inherits full session context and can scope-creep into work it wasn't asked to do (it started rewriting shared design-system files during an image-generation task). Worth remembering: forks are the wrong isolation primitive when a sub-task genuinely must not know the broader plan — a fresh, context-free agent is safer for tightly-scoped delegated work.
+
 ## Changelog
 
 - **Conjectured:** a fresh `useState(() => uuid())` per Player mount is sufficient session identity for offline-first set logging.
