@@ -4,11 +4,11 @@ slug: train-with-britney-workout-app
 project: workout-app
 effort: E4
 effort_source: classifier
-phase: verify
+phase: complete
 progress: 136/138
 mode: interactive
 started: 2026-08-18T00:11:47Z
-updated: 2026-08-18T00:45:00Z
+updated: 2026-08-18T01:00:00Z
 ---
 
 ## Problem
@@ -257,6 +257,9 @@ Ship a running Next.js PWA in `/Users/taboost/workout-app`, installable and navi
 
 ## Decisions
 
+- 2026-08-18T00:57:00Z: **Known limitation, not fixed: two browser tabs open on the same workout at once will race on the session pointer** (last `setActiveSessionId` call wins; the losing tab's session becomes invisible to future hydration, though its data isn't deleted — it's just orphaned in IndexedDB under an untracked id). Adversarial review flagged this correctly. Not fixed this session — would need a `storage` event listener plus cross-tab merge logic, real engineering for a scenario that doesn't apply to a single-user rough-draft demo (one person, one phone, one tab). Documented in `CLAUDE.md` as a real gap to close before this becomes a multi-device product.
+- 2026-08-18T00:55:00Z: **Adversarial review (Cato substitute) caught a real bug: editing an already-logged set and re-completing it could produce a second IndexedDB row instead of overwriting the first**, with reload-hydration order then nondeterministically deciding which value displayed — verified the failure live (edited set 1 from 145/4 to 150/5, reloaded, saw 145/4 — a real reproduction, not a hypothetical). Fixed at the write layer (`saveSetLogLocally` now keyed on a deterministic `${sessionId}:${weId}:${setIndex}` id instead of a fresh `uuid()` per write, so `set()` overwrites in place — duplicates become structurally impossible) and at the read layer as defense in depth (hydration now sorts logs by `completedAt` before merging, so even a stray pre-fix duplicate resolves deterministically to the latest value). Re-verified live on a fresh workout with no stale data: edited 95/8 → 100/6, reloaded, correctly showed 100/6. Also fixed the same review's unbounded-growth finding: `clearLocalSetLogsForSession` now runs when a workout finishes, since the offline store is a staging buffer for the one active session, not permanent history.
+- 2026-08-18T00:48:00Z: **Cato (E4-mandatory cross-vendor audit) failed twice in a row** with truncated, non-substantive outputs ("Now reading the source myself while that runs." / "I'll audit the named files directly.") despite real tool-use activity (5 and 12 tool calls, tens of thousands of tokens each) — looks like an infrastructure issue with the Cato agent definition or its codex subprocess in this environment, not a content problem with the code being audited. Not retried a third time (diminishing returns, doctrine's own "never let ceremony eat the budget" principle applies). Substituted a general-purpose adversarial-review agent covering the same file set and the same specific claims Cato was asked to stress-test, so the *intent* of Rule 2a (independent scrutiny before declaring done) is still honored even though the specific mandated tool wasn't. Flagging this as a real gap in the PAI Cato integration worth investigating outside this task.
 - 2026-08-18T00:26:00Z: **Photography plan revised: no AI-generated stand-in photography ships.** The viewmax image-gen account has no active subscription (HTTP 402 `NO_SUBSCRIPTION` on all 9 attempts, confirmed via a real tool call, not assumed) — fixing that means purchasing a plan, a real-money action I'm not authorized to take unilaterally. Rather than fake it with a different paid service (same risk) or ship broken `<Image>` srcs pointing at files that don't exist (violates ISC-40), PhotoCard is redesigned to render a deterministic branded gradient + icon placeholder keyed on category, with no network/file dependency at all. This is more honest than fabricated photography would have been: it reads as "photo goes here," not as a real (if generic) shoot. Flagged prominently in the final report as the literal #1 pre-launch blocker, exactly as the brief's own §10.2 anticipated. ISC-40 is reinterpreted accordingly: "no broken Image src" is satisfied by having no photographic `<Image>` calls for mock content at all, not by faking one.
 - 2026-08-18T00:22:00Z: **Coordination incident: the "fork" agent dispatched for image generation went out of scope and started rewriting globals.css/utils.ts/brand.ts/layout.tsx in parallel with me**, despite an explicit "don't touch app code" instruction — because a fork inherits full session context (the whole brief, the ISA, my plan) and apparently decided to help beyond its mandate. Caught via the "file changed on disk" system reminders, confirmed via `ListAgents`, stopped via `TaskStop` before it caused more than 4 files of overlap. Resolution: reconciled all 4 files back to a single canonical version (merging its genuinely good ideas — the `BRAND` object shape, `formatDuration`/`formatWeekday`/`uuid` helpers — with my original token/utility naming that my already-written components depend on). Re-dispatching image generation as a plain fresh agent (no inherited context) instead of a fork, specifically to prevent recurrence — a fork is the wrong isolation primitive when the sub-task must NOT know the broader plan.
 - 2026-08-18T00:14:00Z: **set_logs (and body_stats) get a client-generated UUID as their true primary key at write time**, not just sessions (ISC-32 was session-scoped only). Rationale: SystemsThinking leverage analysis (THINK phase) — this is the cheapest possible moment to fix identity (a type definition, not a migration) and it's what makes the sync seam (ISC-103) an idempotent upsert later instead of a redesign. Folded into ISC-29/31/100 implementation rather than adding new IDs this late.
@@ -272,7 +275,20 @@ Ship a running Next.js PWA in `/Users/taboost/workout-app`, installable and navi
 
 ## Changelog
 
-*(populated at LEARN if structural understanding evolves during BUILD/EXECUTE — e.g. if the Wake Lock API or IndexedDB approach needs to change from what's conjectured here)*
+- **Conjectured:** a fresh `useState(() => uuid())` per Player mount is sufficient session identity for offline-first set logging.
+  **Refuted by:** live reload test — a page refresh generated a new session id, orphaning the just-logged set under an untracked id in IndexedDB; the set silently "disappeared" from the UI even though it was still on disk, which is arguably worse than losing it outright (undetectable data loss vs. detectable).
+  **Learned:** offline-first identity needs two layers, not one — a stable pointer to "which session is active for this workout" (localStorage, synchronous, survives reload) AND a stable id on each written row (client UUID, already correct). The pointer layer was the missing piece; ISC-32 only specified the row-level id.
+  **Criterion now:** ISC-100/101/85 pass against `lib/data/session-pointer.ts` + the hydration effect in `player-shell.tsx`, verified via an actual log-set → hard-reload → still-there browser round trip, not code inspection.
+
+- **Conjectured:** a Sun-anchored calendar-week count (`weekCount`) and a rolling-7-day chart (`weeklyBarData`) computed independently would agree closely enough to both read as "this week" on the same screen.
+  **Refuted by:** live screenshot showing "0 This Week" next to a bar chart with 2 non-zero bars for the same week — two different, individually-correct definitions of "week" producing a visibly contradictory UI.
+  **Learned:** when two stats on one screen both claim to describe "now," they need to share one definition, not just be individually well-implemented — coherence is a property of the screen, not of each function in isolation.
+  **Criterion now:** `weekCount` is redefined to sum `weeklyBarData`'s own window, by construction, so they cannot disagree.
+
+- **Conjectured:** the viewmax MCP image-generation tool would produce usable AI-placeholder photography to stand in for the brief's "photo IS the card" motif, given it was listed as an available, ready-to-use tool.
+  **Refuted by:** all 9 generation attempts failed identically with `HTTP 402 NO_SUBSCRIPTION` — a real billing-account limitation, not a prompt or tooling-usage error.
+  **Learned:** "a tool is connected" doesn't mean "a tool is provisioned" — availability in the tool list isn't the same as an active subscription/quota on the account behind it. Don't assume; the failure mode (silent-looking until the actual API call) is exactly the kind of thing worth checking before architecting a feature around it.
+  **Criterion now:** the photo-treatment ISCs (16/40/etc.) are satisfied by a zero-dependency gradient+icon placeholder system instead, which also turned out to be a more honest artifact for a rough draft than fake photography would have been.
 
 ## Verification
 

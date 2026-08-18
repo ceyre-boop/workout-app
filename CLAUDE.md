@@ -40,6 +40,14 @@ and fixed via live browser verification).
   changing `PhotoCard`/`PhotoPlaceholder` to render `next/image` once real
   assets and licensing exist.
 
+## Known limitations (found via adversarial review, not fixed)
+
+- **Multi-tab race on the offline session pointer.** Two tabs open on the
+  same workout at once will race on `lib/data/session-pointer.ts`; the
+  losing tab's locally-logged sets become invisible (not deleted, just
+  orphaned under an untracked session id). Fine for a single-user demo;
+  needs a `storage` event listener + merge before this is a real product.
+
 ## Conventions
 
 - bun only, never npm/npx.
