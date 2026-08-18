@@ -20,11 +20,14 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col gap-8 px-5 pt-6">
-      <h1 className="font-display uppercase tracking-tight text-3xl leading-[0.95]">
-        Good Morning,
-        <br />
-        {firstName}.
-      </h1>
+      <div className="flex flex-col gap-1">
+        <h1 className="font-display uppercase tracking-tight text-3xl leading-[0.95]">
+          Good Morning,
+          <br />
+          {firstName}.
+        </h1>
+        <p className="font-body text-sm text-text-muted">Ready to put in the work?</p>
+      </div>
 
       {todays ? (
         <section className="flex flex-col gap-2">

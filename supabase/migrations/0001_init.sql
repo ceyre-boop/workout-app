@@ -1,4 +1,4 @@
--- Train with Britney — initial schema (brief §4, refined per ISA THINK-phase
+-- Train with Alissa — initial schema (brief §4, refined per ISA THINK-phase
 -- SystemsThinking finding: set_logs and body_stats carry a client-generated
 -- uuid as their true primary key so offline-first sync is an idempotent
 -- upsert later, never a migration).

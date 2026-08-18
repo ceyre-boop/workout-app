@@ -1,4 +1,10 @@
-/** Shared brand mark used by every generated icon route — one drawing, every size. */
+/**
+ * Shared brand mark used by every generated icon route — one drawing, every
+ * size. Simplified 2026-08-18 to match the reference board's actual
+ * treatment: a plain bold letterform on the brand maroon, no added ring —
+ * the earlier version invented a circle-outline detail that isn't on the
+ * boards.
+ */
 export function IconMark({ size }: { size: number }) {
   return (
     <div
@@ -12,30 +18,18 @@ export function IconMark({ size }: { size: number }) {
         borderRadius: size * 0.22,
       }}
     >
-      <div
+      <span
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: size * 0.62,
-          height: size * 0.62,
-          borderRadius: "50%",
-          border: `${Math.max(2, size * 0.045)}px solid white`,
+          fontSize: size * 0.56,
+          fontWeight: 800,
+          color: "white",
+          letterSpacing: -1,
+          lineHeight: 1,
+          fontFamily: "sans-serif",
         }}
       >
-        <span
-          style={{
-            fontSize: size * 0.42,
-            fontWeight: 800,
-            color: "white",
-            letterSpacing: -1,
-            lineHeight: 1,
-            fontFamily: "sans-serif",
-          }}
-        >
-          B
-        </span>
-      </div>
+        A
+      </span>
     </div>
   );
 }
