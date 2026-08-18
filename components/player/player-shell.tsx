@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { X, ChevronLeft, ChevronRight, RefreshCw, SkipForward } from "lucide-react";
 import { useWakeLock } from "@/lib/hooks/use-wake-lock";
 import { uuid } from "@/lib/utils";
-import { saveSetLogLocally, getLocalSetLogsForSession } from "@/lib/data/offline-store";
+import {
+  saveSetLogLocally,
+  getLocalSetLogsForSession,
+  clearLocalSetLogsForSession,
+} from "@/lib/data/offline-store";
 import {
   getActiveSessionId,
   setActiveSessionId,
@@ -92,9 +96,16 @@ export function PlayerShell({
 
     getLocalSetLogsForSession(resolvedId).then((logs) => {
       if (logs.length === 0) return;
+      // Sort oldest-first so a stray duplicate row (e.g. from data written
+      // before the deterministic-id fix below) can't win by iteration-order
+      // luck — last-by-completedAt always wins, deterministically, matching
+      // what "the current value of this set" should mean.
+      const ordered = [...logs].sort(
+        (a, b) => new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime(),
+      );
       setSetsByExercise((prev) => {
         const next = { ...prev };
-        for (const log of logs) {
+        for (const log of ordered) {
           const existing = next[log.workoutExerciseId];
           if (!existing) continue;
           next[log.workoutExerciseId] = existing.map((s) =>
@@ -150,6 +161,7 @@ export function PlayerShell({
       setStepIndex(stepIndex + 1);
     } else {
       clearActiveSessionId(workout.id);
+      if (sessionId) void clearLocalSetLogsForSession(sessionId);
       setCompletedAt(Date.now());
       setPhase("complete");
     }
@@ -167,7 +179,9 @@ export function PlayerShell({
     const next = { ...value, completed: true, skipped: false };
     await updateSet(weId, value.setIndex, next);
     await saveSetLogLocally({
-      id: uuid(),
+      // Deterministic per-slot id — re-completing an edited set overwrites
+      // its own row instead of inserting a second one (see offline-store.ts).
+      id: `${sessionId}:${weId}:${value.setIndex}`,
       sessionId,
       workoutExerciseId: weId,
       setIndex: value.setIndex,
@@ -184,7 +198,7 @@ export function PlayerShell({
     const next = { ...value, completed: false, skipped: true };
     await updateSet(weId, value.setIndex, next);
     await saveSetLogLocally({
-      id: uuid(),
+      id: `${sessionId}:${weId}:${value.setIndex}`,
       sessionId,
       workoutExerciseId: weId,
       setIndex: value.setIndex,
