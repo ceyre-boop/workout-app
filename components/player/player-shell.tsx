@@ -88,10 +88,8 @@ export function PlayerShell({
       setActiveSessionId(workout.id, resolvedId);
     }
     // Genuine one-time async-source fetch (localStorage pointer + IndexedDB
-    // hydration), not derivable during render — the rule's "cascading
-    // render" concern targets state that could be computed synchronously
-    // instead; this state literally doesn't exist until this read resolves.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // hydration), not derivable during render — this state literally
+    // doesn't exist until this read resolves.
     setSessionId(resolvedId);
 
     getLocalSetLogsForSession(resolvedId).then((logs) => {
